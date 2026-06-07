@@ -292,7 +292,9 @@ function buildTranslationPrompt(segments) {
     "- Preserve every placeholder exactly, for example [[KEEP_0]].",
     "- Preserve URLs, filenames, commands, API names, class names, function names, variables, and identifiers.",
     "- Keep these English terms in English unless a Chinese explanation is needed: Token, Prompt, RAG, LoRA, PEFT, API, CLI, MCP, Agent, Multi-Agent, Workflow, Context Window, Tool Calling.",
-    "- For important technical terms on first appearance, use Chinese(English), for example 深度學習(deep learning).",
+    "- For named entities and domain terms from any source language, use translated text(original source text), for example 深度學習(deep learning), 東京大學(東京大学), 生成式 AI(generative AI).",
+    "- Apply translated text(original source text) to people, organizations, products, models, places, book or article titles, and technical terms whenever they appear.",
+    "- Keep the original source term inside parentheses exactly enough for identification, even when the original term is Japanese, Korean, Chinese, or another non-English language.",
     "- Keep the same id for each translated segment.",
     "- Return the translations in the same order as the input.",
     "",
@@ -303,14 +305,15 @@ function buildTranslationPrompt(segments) {
 
 function buildLookupPrompt(term, context) {
   return [
-    "Explain the selected English word or phrase for a Traditional Chinese reader in Taiwan.",
+    "Explain the selected source-language word or phrase for a Traditional Chinese reader in Taiwan.",
     "Return JSON only. Do not include markdown.",
     "",
     "Requirements:",
     "- Focus on the meaning in this context.",
     "- Use Traditional Chinese and Taiwan wording.",
     "- If it is a technical term, explain the technical sense clearly.",
-    "- Keep the English term visible.",
+    "- Keep the selected original term visible.",
+    "- If the term is Japanese, Korean, Chinese, or another non-English language, put pronunciation or reading in the reading field only when it helps understanding.",
     "",
     "Selected term:",
     term,
@@ -346,6 +349,7 @@ function lookupSchema() {
     properties: {
       term: { type: "string" },
       translation: { type: "string" },
+      reading: { type: "string" },
       partOfSpeech: { type: "string" },
       meaningInContext: { type: "string" },
       commonUsage: { type: "string" },

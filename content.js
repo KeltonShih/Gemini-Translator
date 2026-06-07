@@ -42,6 +42,8 @@
   const MAX_CHUNK_ITEMS = 60;
   const MIN_TEXT_LENGTH = 2;
   const TRANSLATABLE_TEXT_PATTERN = /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
+  const LOOKUP_TEXT_PATTERN = /[\p{L}\p{N}]/u;
+  const NON_LATIN_LOOKUP_PATTERN = /[\u0370-\u03FF\u0400-\u04FF\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
 
   const state = {
     mode: "idle",
@@ -693,8 +695,11 @@
   function findEmphasisRanges(text) {
     const value = String(text || "");
     const ranges = [];
+    const cjkTermWithOriginalPattern = /(?:[A-Za-z][A-Za-z0-9.+-]*\s+)?[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]{1,24}(?:\s*[A-Za-z0-9][A-Za-z0-9.+-]*)?\s*[（(][^（）()\n]{1,80}[）)]/g;
+    const latinTermWithOriginalPattern = /\b[A-Z][A-Za-z0-9.+-]*(?:\s+[A-Z][A-Za-z0-9.+-]*){0,4}\s*[（(][^（）()\n]{1,80}[）)]/g;
     const patterns = [
-      /[（(][^（）()]*[A-Za-z][^（）()]*[）)]/g,
+      cjkTermWithOriginalPattern,
+      latinTermWithOriginalPattern,
       /\b(?:AI|AGI|API|CLI|MCP|GPU|CPU|RAG|LoRA|PEFT|Token|Prompt|Agent|Workflow|Gemini|ChatGPT|Claude|OpenAI|DeepMind|Google|Transformer|Turing|Dartmouth|Pascaline)\b/g,
       /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,4}\b/g,
       /\b[A-Z]{2,}(?:-[A-Z0-9]+)?\b/g
@@ -1119,17 +1124,17 @@
     })).filter((range) => range.end > range.start));
 
     if (!ranges.length) {
-      return wrapEnglishWords(text);
+      return wrapLookupTerms(text);
     }
 
     let html = "";
     let cursor = 0;
     for (const range of ranges) {
-      html += wrapEnglishWords(text.slice(cursor, range.start));
-      html += `<mark>${wrapEnglishWords(text.slice(range.start, range.end))}</mark>`;
+      html += wrapLookupTerms(text.slice(cursor, range.start));
+      html += `<mark>${wrapLookupTerms(text.slice(range.start, range.end))}</mark>`;
       cursor = range.end;
     }
-    html += wrapEnglishWords(text.slice(cursor));
+    html += wrapLookupTerms(text.slice(cursor));
     return html;
   }
 
@@ -1149,22 +1154,73 @@
     return merged;
   }
 
-  function wrapEnglishWords(text) {
+  function wrapLookupTerms(text) {
     const value = String(text || "");
-    const wordPattern = /[A-Za-z][A-Za-z0-9]*(?:[’'-][A-Za-z0-9]+)*/g;
+    const ranges = getLookupTermRanges(value);
+    if (!ranges.length) {
+      return escapeHtml(value);
+    }
+
     let html = "";
     let cursor = 0;
-    let match;
 
-    while ((match = wordPattern.exec(value))) {
-      const word = match[0];
-      html += escapeHtml(value.slice(cursor, match.index));
-      html += `<span class="gt-word" data-term="${escapeAttribute(word)}">${escapeHtml(word)}</span>`;
-      cursor = match.index + word.length;
+    for (const range of ranges) {
+      html += escapeHtml(value.slice(cursor, range.start));
+      html += `<span class="gt-word" data-term="${escapeAttribute(range.term)}">${escapeHtml(value.slice(range.start, range.end))}</span>`;
+      cursor = range.end;
     }
 
     html += escapeHtml(value.slice(cursor));
     return html;
+  }
+
+  function getLookupTermRanges(value) {
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+      const ranges = [];
+
+      for (const segment of segmenter.segment(value)) {
+        if (!segment.isWordLike) {
+          continue;
+        }
+
+        const term = cleanLookupTerm(segment.segment);
+        if (!isLookupTerm(term)) {
+          continue;
+        }
+
+        ranges.push({
+          start: segment.index,
+          end: segment.index + segment.segment.length,
+          term
+        });
+      }
+
+      return ranges;
+    }
+
+    return getFallbackLookupTermRanges(value);
+  }
+
+  function getFallbackLookupTermRanges(value) {
+    const fallbackPattern = /[A-Za-z\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F]*(?:[’'-][A-Za-z0-9\u00C0-\u024F]+)*|[\u0370-\u03FF\u0400-\u04FF][\u0370-\u03FF\u0400-\u04FF0-9-]*|[\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]{1,12}/g;
+    const ranges = [];
+    let match;
+
+    while ((match = fallbackPattern.exec(value))) {
+      const term = cleanLookupTerm(match[0]);
+      if (!isLookupTerm(term)) {
+        continue;
+      }
+
+      ranges.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        term
+      });
+    }
+
+    return ranges;
   }
 
   function ensureOverlay() {
@@ -1425,7 +1481,7 @@
 
   function handleOverlaySelection(selection) {
     const term = selection.toString().trim();
-    if (!term || term.length < 2 || !/[A-Za-z]/.test(term)) {
+    if (!isLookupTerm(cleanLookupTerm(term))) {
       return;
     }
 
@@ -1465,9 +1521,22 @@
   function cleanLookupTerm(rawTerm) {
     const term = String(rawTerm || "")
       .trim()
-      .replace(/^[^A-Za-z]+|[^A-Za-z0-9'’-]+$/g, "");
+      .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}'’-]+$/gu, "");
 
-    return /[A-Za-z]/.test(term) ? term : "";
+    if (!isLookupTerm(term)) {
+      return "";
+    }
+
+    return term.length > 80 ? term.slice(0, 80).trim() : term;
+  }
+
+  function isLookupTerm(term) {
+    const value = String(term || "").trim();
+    if (!LOOKUP_TEXT_PATTERN.test(value)) {
+      return false;
+    }
+
+    return value.length >= 2 || NON_LATIN_LOOKUP_PATTERN.test(value);
   }
 
   async function lookupSelectedTerm(overlay) {
@@ -1501,6 +1570,7 @@
       <dl>
         <dt>中文</dt>
         <dd>${escapeHtml(result.translation || "")}</dd>
+        ${result.reading ? `<dt>讀音</dt><dd>${escapeHtml(result.reading)}</dd>` : ""}
         <dt>詞性</dt>
         <dd>${escapeHtml(result.partOfSpeech || "未標示")}</dd>
         <dt>此處意思</dt>
