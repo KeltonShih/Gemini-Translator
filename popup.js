@@ -3,7 +3,9 @@ const elements = {
   statusTitle: document.getElementById("statusTitle"),
   statusDetail: document.getElementById("statusDetail"),
   progressWrap: document.getElementById("progressWrap"),
+  progressTrack: document.getElementById("progressTrack"),
   progressBar: document.getElementById("progressBar"),
+  progressPercent: document.getElementById("progressPercent"),
   translateBtn: document.getElementById("translateBtn"),
   showOriginalBtn: document.getElementById("showOriginalBtn"),
   showTranslationBtn: document.getElementById("showTranslationBtn"),
@@ -116,9 +118,12 @@ function renderStatus(status = {}) {
   elements.statusPill.textContent = pillTextForState(state);
   elements.statusPill.className = `pill ${state === "error" || state === "blocked" ? "error" : ""} ${state === "translated" ? "ready" : ""}`;
 
-  const progress = Number(status.progress || 0);
+  const progress = Math.max(0, Math.min(Number(status.progress || 0), 100));
+  const progressLabel = `${Math.round(progress)}%`;
   elements.progressWrap.hidden = state !== "translating";
-  elements.progressBar.style.width = `${Math.max(0, Math.min(progress, 100))}%`;
+  elements.progressTrack.setAttribute("aria-valuenow", String(Math.round(progress)));
+  elements.progressBar.style.width = `${progress}%`;
+  elements.progressPercent.textContent = progressLabel;
 
   const canTranslate = hasApiKey && !["blocked", "translating", "missing-key"].includes(state);
   const canToggle = state === "translated" || state === "original";

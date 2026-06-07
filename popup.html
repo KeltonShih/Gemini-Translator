@@ -20,7 +20,10 @@
         <p id="statusTitle" class="status-title">正在確認頁面狀態</p>
         <p id="statusDetail" class="status-detail">請稍候。</p>
         <div id="progressWrap" class="progress-wrap" hidden>
-          <div id="progressBar" class="progress-bar"></div>
+          <div id="progressTrack" class="progress-track" role="progressbar" aria-label="翻譯進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+          <span id="progressPercent" class="progress-percent">0%</span>
         </div>
       </section>
 
