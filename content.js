@@ -41,6 +41,7 @@
   const MAX_CHUNK_CHARS = 6500;
   const MAX_CHUNK_ITEMS = 60;
   const MIN_TEXT_LENGTH = 2;
+  const TRANSLATABLE_TEXT_PATTERN = /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/;
 
   const state = {
     mode: "idle",
@@ -378,7 +379,7 @@
 
   function createDocumentTitleRecord(index) {
     const title = document.title.trim();
-    if (!title || title.length < MIN_TEXT_LENGTH || !/[A-Za-z\u00C0-\u024F]/.test(title)) {
+    if (!title || title.length < MIN_TEXT_LENGTH || !hasTranslatableText(title)) {
       return null;
     }
 
@@ -408,7 +409,7 @@
     if (core.length < MIN_TEXT_LENGTH) {
       return false;
     }
-    if (!/[A-Za-z\u00C0-\u024F]/.test(core)) {
+    if (!hasTranslatableText(core)) {
       return false;
     }
     if (looksNonTranslatable(core)) {
@@ -423,6 +424,10 @@
       return false;
     }
     return true;
+  }
+
+  function hasTranslatableText(text) {
+    return TRANSLATABLE_TEXT_PATTERN.test(text);
   }
 
   function hasExcludedAncestor(element) {
