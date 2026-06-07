@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Translator",
+  "description": "Translate the current page into Traditional Chinese for Taiwan while preserving layout and showing the original text on selection.",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Gemini Translator"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ]
+}

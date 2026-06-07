@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gemini Page Translator TW</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <p class="eyebrow">Gemini Translator</p>
+          <h1>繁中閱讀</h1>
+        </div>
+        <span id="statusPill" class="pill">讀取中</span>
+      </header>
+
+      <section class="status-panel">
+        <p id="statusTitle" class="status-title">正在確認頁面狀態</p>
+        <p id="statusDetail" class="status-detail">請稍候。</p>
+        <div id="progressWrap" class="progress-wrap" hidden>
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="translateBtn" class="primary-btn" type="button">翻譯成中文</button>
+        <div class="split">
+          <button id="showOriginalBtn" type="button">顯示原文</button>
+          <button id="showTranslationBtn" type="button">顯示翻譯</button>
+        </div>
+        <div class="split">
+          <button id="optionsBtn" type="button">設定 API Key</button>
+          <button id="clearCacheBtn" type="button">清除本頁快取</button>
+        </div>
+      </section>
+
+      <footer class="hint">
+        翻譯後可直接選取中文，查看對應原文；再選取原文字詞查意思。
+      </footer>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

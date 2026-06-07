@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gemini Translator 設定</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <p class="eyebrow">Settings</p>
+        <h1>Gemini API Key</h1>
+        <p class="intro">API Key 只儲存在這個 Chrome 擴充功能的本機儲存空間，不會寫進程式碼。正式公開使用時，最安全的做法仍是改成伺服器端代理。</p>
+
+        <label for="apiKey">API Key</label>
+        <div class="key-row">
+          <input id="apiKey" type="password" autocomplete="off" placeholder="AIza...">
+          <button id="toggleKeyBtn" type="button" aria-label="顯示或隱藏 API Key">顯示</button>
+        </div>
+
+        <label for="model">翻譯模型</label>
+        <select id="model">
+          <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite（建議，最快）</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite（備用快）</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash（較穩）</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro（品質優先）</option>
+        </select>
+
+        <label for="lookupModel">查字詞模型</label>
+        <select id="lookupModel">
+          <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite（建議）</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+        </select>
+
+        <div class="actions">
+          <button id="saveBtn" class="primary" type="button">儲存設定</button>
+          <button id="testBtn" type="button">測試連線</button>
+          <button id="deleteBtn" class="danger" type="button">刪除 Key</button>
+        </div>
+
+        <p id="message" class="message" role="status"></p>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>
